@@ -1,0 +1,325 @@
+"""
+File Read & Write Challenge with Error Handling Lab
+===================================================
+A comprehensive program that demonstrates file operations and error handling
+"""
+
+import os
+from datetime import datetime
+
+class FileProcessor:
+    """A class to handle file operations with comprehensive error handling."""
+    
+    def __init__(self):
+        self.processed_files = []
+        self.error_log = []
+    
+    def read_file(self, filename):
+        """
+        Safely read a file with comprehensive error handling.
+        
+        Args:
+            filename (str): Path to the file to read
+            
+        Returns:
+            str or None: File content if successful, None if error occurred
+        """
+        try:
+            print(f"🔍 Attempting to read file: {filename}")
+            
+            # Check if file exists
+            if not os.path.exists(filename):
+                raise FileNotFoundError(f"File '{filename}' does not exist.")
+            
+            # Check if it's actually a file (not a directory)
+            if not os.path.isfile(filename):
+                raise IsADirectoryError(f"'{filename}' is a directory, not a file.")
+            
+            # Attempt to read the file
+            with open(filename, 'r', encoding='utf-8') as file:
+                content = file.read()
+                
+            print(f"✅ Successfully read {len(content)} characters from '{filename}'")
+            return content
+            
+        except FileNotFoundError as e:
+            error_msg = f"❌ File not found: {e}"
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return None
+            
+        except PermissionError as e:
+            error_msg = f"❌ Permission denied: Cannot read '{filename}'. Check file permissions."
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return None
+            
+        except IsADirectoryError as e:
+            error_msg = f"❌ Directory error: {e}"
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return None
+            
+        except UnicodeDecodeError as e:
+            error_msg = f"❌ Encoding error: Cannot decode '{filename}'. File may be binary or use different encoding."
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return None
+            
+        except Exception as e:
+            error_msg = f"❌ Unexpected error reading '{filename}': {e}"
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return None
+    
+    def modify_content(self, content, modification_type="word_count"):
+        """
+        Modify file content based on specified type.
+        
+        Args:
+            content (str): Original file content
+            modification_type (str): Type of modification to apply
+            
+        Returns:
+            str: Modified content
+        """
+        if not content:
+            return ""
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        if modification_type == "word_count":
+            # Add word count and statistics
+            lines = content.split('\n')
+            words = content.split()
+            characters = len(content)
+            
+            header = f"""
+=== FILE ANALYSIS REPORT ===
+Generated on: {timestamp}
+Original file statistics:
+- Lines: {len(lines)}
+- Words: {len(words)}
+- Characters: {characters}
+- Characters (no spaces): {len(content.replace(' ', ''))}
+
+=== ORIGINAL CONTENT ===
+"""
+            return header + content
+            
+        elif modification_type == "uppercase":
+            # Convert to uppercase with header
+            header = f"""
+=== UPPERCASE CONVERSION ===
+Generated on: {timestamp}
+Original content converted to uppercase:
+
+"""
+            return header + content.upper()
+            
+        elif modification_type == "line_numbers":
+            # Add line numbers
+            lines = content.split('\n')
+            numbered_lines = []
+            for i, line in enumerate(lines, 1):
+                numbered_lines.append(f"{i:3d}. {line}")
+            
+            header = f"""
+=== LINE-NUMBERED VERSION ===
+Generated on: {timestamp}
+
+"""
+            return header + '\n'.join(numbered_lines)
+        
+        else:
+            return content
+    
+    def write_file(self, filename, content):
+        """
+        Safely write content to a file with error handling.
+        
+        Args:
+            filename (str): Path to the output file
+            content (str): Content to write
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            print(f"📝 Attempting to write to file: {filename}")
+            
+            # Create directory if it doesn't exist
+            directory = os.path.dirname(filename)
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory)
+                print(f"📁 Created directory: {directory}")
+            
+            # Write content to file
+            with open(filename, 'w', encoding='utf-8') as file:
+                file.write(content)
+            
+            print(f"✅ Successfully wrote {len(content)} characters to '{filename}'")
+            self.processed_files.append(filename)
+            return True
+            
+        except PermissionError as e:
+            error_msg = f"❌ Permission denied: Cannot write to '{filename}'. Check directory permissions."
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return False
+            
+        except OSError as e:
+            error_msg = f"❌ OS error writing to '{filename}': {e}"
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return False
+            
+        except Exception as e:
+            error_msg = f"❌ Unexpected error writing to '{filename}': {e}"
+            print(error_msg)
+            self.error_log.append(error_msg)
+            return False
+    
+    def process_file(self, input_filename, output_filename=None, modification_type="word_count"):
+        """
+        Complete file processing: read, modify, and write.
+        
+        Args:
+            input_filename (str): Input file path
+            output_filename (str): Output file path (optional)
+            modification_type (str): Type of modification to apply
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        print(f"\n🚀 Starting file processing...")
+        print(f"Input file: {input_filename}")
+        
+        # Generate output filename if not provided
+        if not output_filename:
+            name, ext = os.path.splitext(input_filename)
+            output_filename = f"{name}_modified{ext}"
+        
+        print(f"Output file: {output_filename}")
+        print(f"Modification type: {modification_type}")
+        
+        # Read file
+        content = self.read_file(input_filename)
+        if content is None:
+            return False
+        
+        # Modify content
+        print(f"🔧 Applying modification: {modification_type}")
+        modified_content = self.modify_content(content, modification_type)
+        
+        # Write modified content
+        success = self.write_file(output_filename, modified_content)
+        
+        if success:
+            print(f"🎉 File processing completed successfully!")
+            print(f"Modified file saved as: {output_filename}")
+        
+        return success
+    
+    def show_summary(self):
+        """Display processing summary and error log."""
+        print("\n" + "="*50)
+        print("📊 PROCESSING SUMMARY")
+        print("="*50)
+        print(f"Files successfully processed: {len(self.processed_files)}")
+        for file in self.processed_files:
+            print(f"  ✅ {file}")
+        
+        print(f"\nErrors encountered: {len(self.error_log)}")
+        for error in self.error_log:
+            print(f"  {error}")
+
+def create_sample_file():
+    """Create a sample file for testing."""
+    sample_content = """Hello World!
+This is a sample text file for testing our file processor.
+It contains multiple lines of text.
+
+Some interesting facts:
+- Python is a powerful programming language
+- File handling is an essential skill
+- Error handling makes programs robust
+
+The end of our sample file."""
+    
+    try:
+        with open("sample.txt", "w") as f:
+            f.write(sample_content)
+        print("📄 Created sample.txt for testing")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to create sample file: {e}")
+        return False
+
+def main():
+    """Main program function."""
+    print("🖋️ FILE READ & WRITE CHALLENGE with ERROR HANDLING LAB 🧪")
+    print("="*60)
+    
+    processor = FileProcessor()
+    
+    while True:
+        print("\n📋 MENU OPTIONS:")
+        print("1. Process an existing file")
+        print("2. Create sample file and process it")
+        print("3. View processing summary")
+        print("4. Exit")
+        
+        try:
+            choice = input("\nEnter your choice (1-4): ").strip()
+            
+            if choice == "1":
+                filename = input("Enter the filename to process: ").strip()
+                if not filename:
+                    print("❌ Filename cannot be empty!")
+                    continue
+                
+                print("\nModification options:")
+                print("1. Add word count and statistics (default)")
+                print("2. Convert to uppercase")
+                print("3. Add line numbers")
+                
+                mod_choice = input("Choose modification type (1-3, default=1): ").strip()
+                modification_map = {
+                    "1": "word_count",
+                    "2": "uppercase", 
+                    "3": "line_numbers",
+                    "": "word_count"
+                }
+                
+                modification_type = modification_map.get(mod_choice, "word_count")
+                
+                output_file = input("Enter output filename (press Enter for auto-generate): ").strip()
+                if not output_file:
+                    output_file = None
+                
+                processor.process_file(filename, output_file, modification_type)
+                
+            elif choice == "2":
+                print("\n🔧 Creating sample file...")
+                if create_sample_file():
+                    processor.process_file("sample.txt", "sample_modified.txt", "word_count")
+                
+            elif choice == "3":
+                processor.show_summary()
+                
+            elif choice == "4":
+                print("\n👋 Thank you for using the File Processor!")
+                break
+                
+            else:
+                print("❌ Invalid choice! Please enter 1-4.")
+                
+        except KeyboardInterrupt:
+            print("\n\n⚠️ Program interrupted by user. Exiting...")
+            break
+        except Exception as e:
+            print(f"❌ Unexpected error: {e}")
+
+if __name__ == "__main__":
+    main()
